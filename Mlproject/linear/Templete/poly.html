@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>🏠 House price · linear regression</title>
+    <!-- Bootstrap 5 (cosmo theme variant via bootstrap darkly?) using standard bootstrap with custom pastel overrides -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- improved modern CSS adjustments -->
+    <style>
+        /* Global improvements */
+        body {
+            background: linear-gradient(145deg, #f0f7fa 0%, #e3eef8 100%);
+            font-family: 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 1rem 0 2rem;
+        }
+        
+        .container-custom {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px -18px rgba(0,40,60,0.3);
+            padding: 2.2rem 2.2rem 2.8rem;
+            margin-top: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.7);
+            transition: all 0.3s ease;
+        }
+        
+        h2 {
+            font-weight: 550;
+            color: #164a5f;
+            border-left: 8px solid #3fa3b0;
+            padding-left: 1.3rem;
+            margin-bottom: 2.2rem;
+            letter-spacing: -0.01em;
+            text-shadow: 2px 2px 3px rgba(255,255,255,0.9);
+            font-size: 2rem;
+        }
+        
+        /* Improved search */
+        .search-bar {
+            border-radius: 40px;
+            border: 1px solid #d0e1e8;
+            padding: 0.7rem 1.5rem;
+            background: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+        
+        .search-bar:focus {
+            border-color: #2f8b9c;
+            box-shadow: 0 0 0 4px rgba(58,123,132,0.15);
+            outline: none;
+        }
+        
+        /* Enhanced results card */
+        .results-card {
+            background: #fffffff2;
+            backdrop-filter: blur(8px);
+            border: 1px solid #cbe6ed;
+            border-radius: 32px;
+            padding: 1.8rem 2rem;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 20px 35px -14px #1a4050;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .results-card:hover {
+            box-shadow: 0 25px 40px -14px #0f3b4a;
+        }
+        
+        .results-card h4 {
+            color: #135a6e;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            border-bottom: 2px dashed #b5d8e3;
+            padding-bottom: 0.75rem;
+        }
+        
+        .results-card h4::before {
+            content: "📐";
+            font-size: 1.9rem;
+            margin-right: 8px;
+        }
+        
+        /* Metric badges - redesigned */
+        .metric-badge {
+            background: linear-gradient(135deg, #f0faff, #e5f5fc);
+            border-radius: 60px;
+            padding: 0.6rem 1rem;
+            font-size: 1rem;
+            border: 1px solid #bfe2ed;
+            color: #0b4050;
+            font-weight: 500;
+            box-shadow: 0 4px 8px rgba(0,40,50,0.08);
+            display: inline-flex;
+            align-items: center;
+            width: 100%;
+            transition: all 0.15s;
+        }
+        
+        .metric-badge:hover {
+            background: white;
+            border-color: #78c2d0;
+            transform: translateY(-2px);
+        }
+        
+        .metric-badge strong {
+            font-weight: 650;
+            color: #016d82;
+            margin-right: 10px;
+            min-width: 65px;
+        }
+        
+        /* Table styling improvements */
+        .table {
+            border-radius: 1.8rem 1.8rem 1.2rem 1.2rem;
+            overflow: hidden;
+            box-shadow: 0 15px 30px -18px #123d4d;
+            border: none;
+        }
+        
+        .table thead {
+            background: #1b4f5e;
+            color: white;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 0.8rem;
+        }
+        
+        .table thead th {
+            border-bottom: none;
+            padding: 1rem 0.5rem;
+            border-right: 1px solid #317485;
+        }
+        
+        .table thead th:last-child {
+            border-right: none;
+        }
+        
+        .table tbody tr {
+            transition: background 0.15s;
+        }
+        
+        .table tbody tr:hover {
+            background: #e3f3fa !important;
+        }
+        
+        .table tbody tr:first-child {
+            background: #f4fbfe;
+        }
+        
+        .table tbody td {
+            padding: 0.8rem 0.4rem;
+            vertical-align: middle;
+            border-color: #d1e2ea;
+        }
+        
+        /* Button enhancements */
+        .btn-soft-teal {
+            background: #dcf0f5;
+            border: 1px solid #9fd0db;
+            color: #0d5968;
+            border-radius: 40px;
+            padding: 0.3rem 1.2rem;
+            font-size: 0.85rem;
+            font-weight: 550;
+            transition: all 0.2s;
+        }
+        
+        .btn-soft-teal:hover {
+            background: #c2e4ef;
+            border-color: #4b9faf;
+            color: #033b47;
+            transform: scale(1.02);
+            box-shadow: 0 4px 10px rgba(33,120,130,0.2);
+        }
+        
+        #BoxPOP {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 85%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 28px;
+            z-index: 9999;
+            box-shadow: 0 40px 70px -20px #001e2b;
+            border: 1px solid #bee0ea;
+            padding: 2rem;
+        }
+        
+        .btn-success {
+            background: #2b8b7c;
+            border: none;
+            border-radius: 50px;
+            padding: 0.4rem 1.5rem;
+            font-weight: 550;
+            box-shadow: 0 8px 16px #1a5b4e77;
+            transition: all 0.15s;
+        }
+        
+        .btn-success:hover {
+            background: #1d7464;
+            transform: scale(0.97);
+            box-shadow: 0 5px 12px #12574a;
+        }
+        
+        .btn-outline-muted {
+            border-radius: 40px;
+            border: 1px solid #b9d7e2;
+            background: transparent;
+            color: #1a6272;
+            padding: 0.3rem 1.2rem;
+            font-weight: 500;
+            transition: 0.15s;
+        }
+        
+        .btn-outline-muted:hover {
+            background: #d8eef7;
+            border-color: #71b3c4;
+        }
+        
+        /* Form inputs - improved */
+        input.form-control {
+            border-radius: 24px;
+            border: 1px solid #cee3ec;
+            padding: 0.5rem 1rem;
+            background: white;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        input.form-control:focus {
+            border-color: #2f9bb0;
+            box-shadow: 0 0 0 4px rgba(66,157,173,0.2);
+            background: #ffffff;
+        }
+        
+        input.form-control::placeholder {
+            color: #9bb8c5;
+            font-size: 0.8rem;
+        }
+        
+        /* Better spacing for action buttons in table */
+        .table .btn {
+            min-width: 65px;
+            margin: 2px 0;
+        }
+        
+        /* Model row styling */
+        #model {
+            background: transparent;
+        }
+        
+        #model tr td {
+            background: #eaf3f8;
+            padding: 0.75rem 0.5rem;
+            border-bottom: 2px solid #b9dae7;
+        }
+        
+        /* Popup close button */
+        #closeBtn {
+            border-radius: 40px;
+            padding: 0.5rem 2rem;
+            background: #dc3545;
+            border: none;
+            font-weight: 500;
+            transition: 0.15s;
+        }
+        
+        #closeBtn:hover {
+            background: #b02a37;
+            transform: scale(0.97);
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container-custom {
+                padding: 1.2rem;
+            }
+            
+            .table thead {
+                font-size: 0.7rem;
+            }
+            
+            .metric-badge {
+                font-size: 0.85rem;
+                padding: 0.4rem 0.8rem;
+            }
+            
+            #BoxPOP {
+                width: 95%;
+                padding: 1rem;
+            }
+        }
+        
+        /* Loading state for buttons (optional enhancement) */
+        .btn-loading {
+            position: relative;
+            color: transparent !important;
+        }
+        
+        .btn-loading:after {
+            content: "⏳";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+        }
+        
+        /* Additional polish */
+        .mt-6 {
+            margin-top: 3.5rem;
+        }
+        
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Tiny visual enhancement for prediction section */
+        #predication, #mse, #rmse, #r2, #intercept {
+            font-weight: 600;
+            color: #0f4a5a;
+            background: rgba(255,255,255,0.8);
+            padding: 2px 8px;
+            border-radius: 30px;
+        }
+    </style>
+</head>
+<body>
+<div class="container container-custom">
+    <h2>⚡ linear regression · house price estimator</h2>
+
+    <!-- Model results container (always hidden initially) -->
+    <div id="modelResultsContainer" style="display: none;" class="results-card">
+        <h4>📈 regression metrics</h4>
+        <div class="row g-3 align-items-center">
+            <div class="mt-4 text-center">
+                <img id="graph1" style="max-width:100%; border-radius:15px;">
+            </div>
+            <div class="mt-4 text-center">
+                <img id="graph2" style="max-width:100%; border-radius:15px;">
+            </div>
+            <div class="col-md-3 col-sm-6">
+                <span class="metric-badge"><strong>🔮 Prediction</strong> <span id="predication">—</span></span>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <span class="metric-badge"><strong>⚠️ Error</strong> <span id="error">—</span></span>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <span class="metric-badge"><strong>📉 MSE</strong> <span id="mse">—</span></span>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <span class="metric-badge"><strong>📊 RMSE</strong> <span id="rmse">—</span></span>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <span class="metric-badge"><strong>📐 R²</strong> <span id="r2">—</span></span>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <span class="metric-badge"><strong>📐 R²</strong> <span id="r2">—</span></span>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <span class="metric-badge"><strong>📐 R²</strong> <span id="r2">—</span></span>
+            </div>
+            <div class="col-md-2 col-sm-6">
+                <span class="metric-badge"><strong>🧮 intercept</strong> <span id="intercept">—</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSRF token -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Search input with improved styling -->
+    <input type="text" id="searchInput" class="form-control search-bar mb-4" placeholder="🔍 Search any house data by address or features...">
+
+    <!-- Edit row (hidden by default) -->
+    <table style="display: none;" id="model" class="model mb-3">
+        <tr class="table-active">
+            <td><input type="show" id="id" class="form-control" placeholder="id"></td>
+            <td><input type="number" id="Size_sqft_up" class="form-control" placeholder="sqft"></td>
+            <td><input type="number" id="Bedrooms_up" class="form-control" placeholder="bed"></td>
+            <td><input type="text" id="Bathrooms_up" class="form-control" placeholder="baths"></td>
+            <td><input type="number" id="Age_years_up" step="1" class="form-control" placeholder="age"></td>
+            <td><input type="number" id="Distance_to_city_km_up" step="1" class="form-control" placeholder="dist."></td>
+            <td><input type="text" id="Location_type_up" class="form-control" placeholder="urban/suburb"></td>
+            <td><input type="text" id="Condition_up" class="form-control" placeholder="excellent/good"></td>
+            <td><input type="text" id="House_Price_up" class="form-control" placeholder="price"></td>
+            <td><button class="btn btn-soft-teal btn-sm" id="Update_data">UPDATE</button></td>
+        </tr>
+    </table>
+
+    <!-- Main table -->
+    <table class="table table-bordered table-striped align-middle" id="employeeTable">
+        <thead class="table-dark">
+            <tr>
+                <th>Size_sqft</th>
+                <th>Bedrooms</th>
+                <th>Bathrooms</th>
+                <th>Age_years</th>
+                <th>Distance_to_city_km</th>
+                <th>Action1</th>
+             
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Editable Row for Adding New Record -->
+            <tr class="table-active">
+                <td><input type="number" id="Size_sqft" class="form-control" placeholder="sqft"></td>
+                <td><input type="number" id="Bedrooms" class="form-control" placeholder="bed"></td>
+                <td><input type="text" id="Bathrooms" class="form-control" placeholder="baths"></td>
+                <td><input type="number" id="Age_years" step="1" class="form-control" placeholder="age"></td>
+                <td><input type="number" id="Distance_to_city_km" step="1" class="form-control" placeholder="dist."></td>
+            
+                <td><button class="btn btn-soft-teal btn-sm" id="Predict">📐 Pred</button></td>
+            </tr>
+        </tbody>
+    </table>
+    <script>
+        $(document).ready(function(){
+            let csrftoken = $('meta[name="csrf-token"]').attr('content');
+            $("#searchInput").on('keyup', function(){
+                let val= $(this).val().toLowerCase();
+                $("#employeeTable tbody tr").filter(function(){
+                    $(this).toggle($(this).text().toLowerCase().indexOf(val)>-1)})})
+            $("#saveButton").click(function(response){
+                let employes={
+                    Size_sqft:$("#Size_sqft").val(),
+                    Bedrooms:$("#Bedrooms").val(),
+                    Bathrooms:$("#Bathrooms").val(),
+                    Age_years:$("#Age_years").val(),
+                    Distance_to_city_km:$("#Distance_to_city_km").val(),
+                    Location_type:$("#Location_type").val(),
+                    Condition:$("#Condition").val(),
+                    House_Price:$("#House_Price").val(),
+                }
+                console.log(employes)
+                $.ajax({
+                    url:"{% url 'poly_nomial'%}",
+                    type:"POST",
+                    headers:{'X-CSRFToken':csrftoken},
+                    data:employes,
+                    success:function(){
+                        alert("the data is insert to Data")
+                        // Clear input fields
+                        $("#Size_sqft").val("");
+                        $("#Bedrooms").val("");
+                        $("#Bathrooms").val("");
+                        $("#Age_years").val("");
+                        $("#Distance_to_city_km").val("");
+                        $("#Location_type").val("");
+                        $("#Condition").val("");
+                        $("#House_Price").val("");
+                      
+                    },error:function(){
+                        alert("not inserted Data")
+                    }
+
+                })})
+                //predict the value
+                 $("#Predict").click(function(response){
+                    let employes={
+                    Size_sqft:$("#Size_sqft").val(),
+                    Bedrooms:$("#Bedrooms").val(),
+                    Bathrooms:$("#Bathrooms").val(),
+                    Age_years:$("#Age_years").val(),
+                    Distance_to_city_km:$("#Distance_to_city_km").val(),
+                   
+                }
+                console.log(employes)
+                $.ajax({
+                    url:"{% url 'poly_predict'%}",
+                    type:"POST",
+                    headers:{'X-CSRFToken':csrftoken},
+                    data:employes,
+                    success:function(response){
+                        $("#modelResultsContainer").show()
+                    //    $("#graph1").attr("src","data:image/png;base64,"+response.predict.graph)
+                      //  $("#graph2").attr("src","data:image/png;base64,"+response.predict.graph2)
+                        $("#rmse").text(response.predict.rmse)
+                        $("#predication").text(response.predict.predication)
+                        $("#error").text(response.predict.error)
+                        $("#r2").text(response.predict.r2)
+                        $("#slop").text(response.predict.slope)
+                        $("#intercept").text(response.predict.intercept)
+                        
+                        
+                    },error:function(){
+                        alert("Data is not predicted")
+                    }
+
+                })})
+             
+        })//end od document .ready and function 
+    </script>
+ 
+
+       
+
+</body>
+</html>

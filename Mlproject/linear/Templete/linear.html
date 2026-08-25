@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee Data</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+</head>
+<body>
+<div class="container mt-5">
+    <h2>Linear Regression</h2>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <table class="table table-bordered table-striped" id="employeeTable">
+        <thead class="table-dark">
+            <tr>
+                <th>Employee ID</th>
+                <th>Experience (Years)</th>
+                <th>Education Level</th>
+                <th>Skill Score</th>
+                <th>Salary (Thousands)</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Editable Row for Adding New Employee -->
+            <tr>
+                <td><input type="number" id="ID" class="form-control"></td>
+                <td><input type="number" id="Experience" class="form-control"></td>
+                <td><input type="text" id="Education" class="form-control"></td>
+                <td><input type="number" id="Skill" step="1" class="form-control"></td>
+                <td><input type="number" id="Salary" step="1" class="form-control"></td>
+                <td><button class="btn btn-success" id="saveButton">Save</button></td>
+            </tr>
+
+            <!-- Existing Employees -->
+            {% for emp in employ %}
+            <tr>
+                <td>{{ emp.employee_id }}</td>
+                <td>{{ emp.experience_years }}</td>
+                <td>{{ emp.education_level }}</td>
+                <td>{{ emp.skill_score }}</td>
+                <td>{{ emp.salary_thousands }}</td>
+                <td></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+$(document).ready(function(){
+    $('#saveButton').click(function(){
+        let csrftoken = $('meta[name="csrf-token"]').attr('content');
+
+        let employeeData = {
+            ID: $('#ID').val(),
+            Experience: $('#Experience').val(),
+            Education: $('#Education').val(),
+            Skill: $('#Skill').val(),
+            Salary: $('#Salary').val()
+        };
+        console.log("employee data", employeeData);
+
+        $.ajax({
+            url: "{% url 'employes' %}",
+            type: 'POST',
+            headers: { 'X-CSRFToken': csrftoken },
+            data: employeeData,
+            success: function(response) {
+                alert('Employee data saved successfully!');
+                console.log('Server response:', response);
+
+                // Optionally, append the new employee to the table without reload
+                let newRow = `<tr>
+                    <td>${employeeData.ID}</td>
+                    <td>${employeeData.Experience}</td>
+                    <td>${employeeData.Education}</td>
+                    <td>${employeeData.Skill}</td>
+                    <td>${employeeData.Salary}</td>
+                    <td></td>
+                </tr>`;
+                $('#employeeTable tbody').append(newRow);
+                // Clear the input row
+                $('#ID').val('');
+                $('#Experience').val('');
+                $('#Education').val('');
+                $('#Skill').val('');
+                $('#Salary').val('');
+            },
+            error: function(xhr, status, error) {
+                alert('Error saving employee data!');
+                console.error('AJAX error:', status, error);
+            }
+        });
+    });
+});
+</script>
+</body>
+</html>
