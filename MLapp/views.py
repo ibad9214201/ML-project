@@ -56,13 +56,14 @@ def Decisiontree(request):
     x=df[['Weather','Temperature','Humidity','Wind','Weekend','Ground_Condition']]
    # df['Play_Football'] = df['Play_Football'].str.strip().str.capitalize()
     y=df['Play_Football'].map({'Yes':1,"No":0})
-    x_train,x_test,y_train,y_test=train_test_split(x,y,random_state=42,test_size=0.2)
+    
     categorical =['Weather','Temperature','Humidity','Wind','Weekend','Ground_Condition']
     process = ColumnTransformer(transformers=[
     ("encoded", OneHotEncoder(handle_unknown='ignore'), categorical)])
     pipe=Pipeline(steps=[
         ('process',process),('Decision', DecisionTreeClassifier(max_depth=1,random_state=42))
     ])
+    x_train,x_test,y_train,y_test=train_test_split(x,y,random_state=42,test_size=0.2)
     pipe.fit(x_train,y_train)
     predict=pipe.predict(x_test)
     print(predict)
@@ -72,13 +73,7 @@ def Decisiontree(request):
     recall=recall_score(y_test,predict)
     f1=f1_score(y_test,predict)
     report=classification_report(y_test,predict,output_dict=True)
-    #fig,ax=plt.subplots()
-    #ConfusionMatrixDisplay.from_estimator(pipe,x_test,y_test,ax=ax)
-    #byf=io.BytesIO()
-    #plt.savefig(byf,format='png')
-    #byf.seek(0)
-    #image_base64=base64.b64encode(byf.getvalue()).decode('utf-8')
-    #plt.close()
+ 
     context={
         'predictions': list(predict),
         'accuracy': accuracy,
