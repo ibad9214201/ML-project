@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two tables · modal edit (second column popup)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #f6f9fc 0%, #e9f1f8 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .tables-container {
+            max-width: 1100px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+        }
+        .card {
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(4px);
+            border-radius: 32px;
+            padding: 1.8rem 2rem;
+            box-shadow: 0 20px 40px -12px rgba(0,20,40,0.35),
+                        0 4px 18px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        h2 {
+            margin-top: 0.2rem;
+            margin-bottom: 1.2rem;
+            font-weight: 500;
+            font-size: 1.9rem;
+            letter-spacing: -0.02em;
+            color: #103b5e;
+            border-left: 7px solid #2a7faa;
+            padding-left: 1.2rem;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 20px;
+            background: #ffffffd9;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.02), 0 8px 18px rgba(0,40,70,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 1rem;
+            min-width: 550px;
+        }
+        th {
+            background-color: #1e4b6e;
+            color: white;
+            font-weight: 500;
+            font-size: 1.1rem;
+            padding: 16px 12px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        th:first-child { border-top-left-radius: 18px; }
+        th:last-child { border-top-right-radius: 18px; }
+        td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #dae6ed;
+            background-color: white;
+            color: #11364e;
+            vertical-align: middle;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        /* normal text display (always visible, not inputs) */
+        .field-text {
+            padding: 4px 4px;
+            font-weight: 440;
+            display: inline-block;
+            min-width: 80px;
+        }
+        .action-btns {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: none;
+            background: transparent;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.15s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            min-width: 68px;
+        }
+        .btn-edit {
+            background: #f5e7d9;
+            color: #924d2b;
+            border: 1px solid #ebc8ad;
+        }
+        .btn-edit:hover {
+            background: #f8dbbc;
+            color: #6f3a1f;
+            transform: scale(1.02);
+            border-color: #c9916a;
+        }
+        .btn-save {
+            background: #d7ecdc;
+            color: #1f6533;
+            border: 1px solid #a1c9ab;
+        }
+        .btn-save:hover {
+            background: #c1e0cb;
+            color: #0e4a23;
+            border-color: #6fa583;
+            transform: scale(1.02);
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            filter: grayscale(0.3);
+        }
+        td:last-child {
+            width: 160px;
+            text-align: left;
+        }
+        tbody tr:nth-child(even) td {
+            background-color: #fafdff;
+        }
+        .footer-note {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #2f5570;
+            display: flex;
+            gap: 20px;
+            justify-content: flex-end;
+        }
+
+        /* ---------- MODAL POPUP (for second column) ---------- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(10, 30, 50, 0.5);
+            backdrop-filter: blur(4px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-card {
+            background: #ffffffec;
+            border-radius: 36px;
+            padding: 2rem 2.2rem 2rem 2.2rem;
+            width: 420px;
+            max-width: 94vw;
+            box-shadow: 0 40px 60px rgba(0, 20, 40, 0.5);
+            border: 1px solid rgba(255,255,255,0.7);
+            animation: modal-appear 0.2s ease;
+        }
+        @keyframes modal-appear {
+            from { opacity: 0.4; transform: scale(0.96); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-card h3 {
+            margin-top: 0.2rem;
+            margin-bottom: 1.4rem;
+            font-size: 1.8rem;
+            font-weight: 450;
+            color: #103b5e;
+            border-left: 6px solid #2a7faa;
+            padding-left: 1.2rem;
+        }
+        .modal-card .field-group {
+            margin-bottom: 1.4rem;
+        }
+        .modal-card label {
+            font-weight: 600;
+            color: #1a526b;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+            letter-spacing: 0.3px;
+        }
+        .modal-card input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #b7d3e3;
+            border-radius: 30px;
+            font-size: 1.05rem;
+            background: #f2faff;
+            transition: 0.2s;
+            outline: none;
+        }
+        .modal-card input:focus {
+            border-color: #1e6c9e;
+            box-shadow: 0 0 0 4px rgba(30,108,158,0.2);
+            background: #ffffff;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 14px;
+            margin-top: 2rem;
+        }
+        .modal-btn {
+            border: none;
+            background: transparent;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 12px 26px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.15s;
+            border: 1px solid transparent;
+        }
+        .modal-btn.save {
+            background: #1e6c9e;
+            color: white;
+            box-shadow: 0 8px 14px -8px #10527c;
+        }
+        .modal-btn.save:hover {
+            background: #145a86;
+            transform: scale(1.02);
+        }
+        .modal-btn.cancel {
+            background: #ecf2f7;
+            color: #1d3f59;
+            border-color: #c2d6e6;
+        }
+        .modal-btn.cancel:hover {
+            background: #dde9f2;
+        }
+        /* highlight second column when row is being edited (optional) */
+        .modal-active-row td:nth-child(2) {
+            background-color: #fffae0;
+            transition: 0.1s;
+        }
+        /* small badge */
+        .second-col-hint {
+            font-size: 0.75rem;
+            background: #d4e3f0;
+            padding: 2px 10px;
+            border-radius: 30px;
+            color: #1f4b6e;
+        }
+    </style>
+</head>
+<body>
+    <div class="tables-container">
+        <!-- TABLE 1: PRODUCTS -->
+        <div class="card">
+            <h2>📋 Products <span class="second-col-hint">② click Edit → popup for second column</span></h2>
+            <div class="table-wrapper">
+                <table id="table1">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Category</th>   <!-- second column: popup on Edit -->
+                            <th>Price ($)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="editable-cell" data-field="item">Wireless mouse</td>
+                            <td class="editable-cell second-col" data-field="category">Electronics</td>
+                            <td class="editable-cell" data-field="price">29.99</td>
+                            <td class="action-cell">
+                                <div class="action-btns">
+                                    <button class="btn btn-edit">Edit</button>
+                                    <button class="btn btn-save">Save</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="editable-cell" data-field="item">Desk lamp</td>
+                            <td class="editable-cell second-col" data-field="category">Home</td>
+                            <td class="editable-cell" data-field="price">45.50</td>
+                            <td class="action-cell">
+                                <div class="action-btns">
+                                    <button class="btn btn-edit">Edit</button>
+                                    <button class="btn btn-save">Save</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="editable-cell" data-field="item">Notebook (set of 3)</td>
+                            <td class="editable-cell second-col" data-field="category">Stationery</td>
+                            <td class="editable-cell" data-field="price">12.30</td>
+                            <td class="action-cell">
+                                <div class="action-btns">
+                                    <button class="btn btn-edit">Edit</button>
+                                    <button class="btn btn-save">Save</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TABLE 2: EMPLOYEES -->
+        <div class="card">
+            <h2>🧑‍💼 Employees <span class="second-col-hint">② second column = Department</span></h2>
+            <div class="table-wrapper">
+                <table id="table2">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Department</th>   <!-- second column: popup on Edit -->
+                            <th>Country</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="editable-cell" data-field="name">Maria Chen</td>
+                            <td class="editable-cell second-col" data-field="department">Engineering</td>
+                            <td class="editable-cell" data-field="country">Canada</td>
+                            <td class="action-cell">
+                                <div class="action-btns">
+                                    <button class="btn btn-edit">Edit</button>
+                                    <button class="btn btn-save">Save</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="editable-cell" data-field="name">James Okafor</td>
+                            <td class="editable-cell second-col" data-field="department">Marketing</td>
+                            <td class="editable-cell" data-field="country">Nigeria</td>
+                            <td class="action-cell">
+                                <div class="action-btns">
+                                    <button class="btn btn-edit">Edit</button>
+                                    <button class="btn btn-save">Save</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="editable-cell" data-field="name">Elena Voss</td>
+                            <td class="editable-cell second-col" data-field="department">Sales</td>
+                            <td class="editable-cell" data-field="country">Germany</td>
+                            <td class="action-cell">
+                                <div class="action-btns">
+                                    <!-- fixed class btn-edit (was "edit" before) -->
+                                    <button class="btn btn-edit">Edit</button>
+                                    <button class="btn btn-save">Save</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="editable-cell" data-field="name">Raj Patel</td>
+                            <td class="editable-cell second-col" data-field="department">Finance</td>
+                            <td class="editable-cell" data-field="country">India</td>
+                            <td class="action-cell">
+                                <div class="action-btns">
+                                    <button class="btn btn-edit">Edit</button>
+                                    <button class="btn btn-save">Save</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="footer-note">
+            <span>✎ Click Edit — popup shows for second column — edit then Save</span>
+            <span>⚡ both tables independent</span>
+        </div>
+    </div>
+
+    <!-- GLOBAL MODAL (popup for editing second column) -->
+    <div class="modal-overlay" id="secondColModal">
+        <div class="modal-card">
+            <h3 id="modalTitle">Edit Department</h3>
+            <div class="field-group">
+                <label for="modalInput" id="modalLabel">Department:</label>
+                <input type="text" id="modalInput" placeholder="New value...">
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" id="modalCancelBtn">Cancel</button>
+                <button class="modal-btn save" id="modalSaveBtn">Save change</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    $(document).ready(function() {
+        // Modal elements
+        const $modalOverlay = $('#secondColModal');
+        const $modalInput = $('#modalInput');
+        const $modalTitle = $('#modalTitle');
+        const $modalLabel = $('#modalLabel');
+        const $modalCancel = $('#modalCancelBtn');
+        const $modalSave = $('#modalSaveBtn');
+
+        // State: which row and which table cell (second column) is being edited
+        let activeCell = null;               // the <td> with class second-col that we are editing
+        let activeRow = null;                 // the parent row
+        let activeTableId = null;              // 'table1' or 'table2'
+
+        // Helper: get the column header name for the second column (depends on table)
+        function getSecondColumnHeader(tableId) {
+            if (tableId === 'table1') return 'Category';
+            if (tableId === 'table2') return 'Department';
+            return 'Field';
+        }
+
+        // Open modal for a given second-column cell
+        function openModalForCell(cell) {
+            if (!cell) return;
+            
+            // Convert to jQuery object if needed
+            const $cell = $(cell);
+            
+            // Determine table
+            const $table = $cell.closest('table');
+            if (!$table.length) return;
+            const tableId = $table.attr('id');   // 'table1' or 'table2'
+
+            // Get current value (trim text)
+            const currentValue = $cell.text().trim();
+
+            // Set modal label and title based on table
+            const colName = getSecondColumnHeader(tableId);
+            $modalTitle.text(`Edit ${colName}`);
+            $modalLabel.text(`${colName}:`);
+
+            // Put current value in input
+            $modalInput.val(currentValue);
+
+            // Store active cell and row
+            activeCell = cell;
+            activeRow = $cell.closest('tr')[0];
+            activeTableId = tableId;
+
+            // Optional highlight the row's second column (add class to row)
+            if (activeRow) {
+                // remove highlight from any previous row
+                $('.modal-active-row').removeClass('modal-active-row');
+                $(activeRow).addClass('modal-active-row');
+            }
+
+            // Show modal
+            $modalOverlay.css('display', 'flex');
+        }
+
+        // Close modal without saving
+        function closeModal() {
+            $modalOverlay.hide();
+            // remove highlight
+            if (activeRow) {
+                $(activeRow).removeClass('modal-active-row');
+            }
+            // reset active references
+            activeCell = null;
+            activeRow = null;
+            activeTableId = null;
+        }
+
+        // Save changes: write input value to activeCell
+        function saveChanges() {
+            if (!activeCell) {
+                closeModal();
+                return;
+            }
+            
+            const newValue = $modalInput.val().trim();
+            if (newValue !== '') {
+                $(activeCell).text(newValue);
+            } else {
+                // if empty, set as empty string
+                $(activeCell).text('');
+            }
+
+            // Now close modal and clean
+            closeModal();
+        }
+
+        // Cancel modal
+        $modalCancel.on('click', function(e) {
+            e.preventDefault();
+            closeModal();
+        });
+
+        $modalSave.on('click', function(e) {
+            e.preventDefault();
+            saveChanges();
+        });
+
+        // Click outside overlay to close (optional)
+        $modalOverlay.on('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Handle Enter key in input
+        $modalInput.on('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveChanges();
+            }
+        });
+
+        // ---- ATTACH EDIT BUTTONS ----
+        $(document).on('click', '.btn-edit', function(e) {
+            // Find the row containing this edit button
+            const $row = $(this).closest('tr');
+            if (!$row.length) return;
+
+            // Find the second column in that row (index 1, 0-based)
+            const $cells = $row.find('td');
+            if ($cells.length >= 2) {
+                // second column = index 1 (0: first col, 1: second col)
+                const secondColCell = $cells[1];
+                if (secondColCell) {
+                    e.preventDefault();  // optional
+                    openModalForCell(secondColCell);
+                }
+            } else {
+                alert('Row does not have enough columns');
+            }
+        });
+
+        // Handle Save buttons (row save) – to give some feedback, but leave data intact.
+        $(document).on('click', '.btn-save', function(e) {
+            // provide a subtle message
+            const $row = $(this).closest('tr');
+            if ($row.length) {
+                const $secondCol = $row.find('td:nth-child(2)');
+                const val = $secondCol.length ? $secondCol.text().trim() : '?';
+                alert(`Second column value = "${val}".\n(Use Edit button to change via popup.)`);
+            }
+        });
+
+        // Ensure modal is hidden on load
+        $modalOverlay.hide();
+    });
+</script>
+    <!-- subtle note: second column edit triggers modal, Save button shows message -->
+</body>
+</html>

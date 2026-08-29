@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Match Decision Tree Results</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        /* Depth Form Styling */
+form:first-of-type {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+}
+
+#start, #End {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    width: 180px;
+    transition: 0.3s;
+}
+
+#start:focus, #End:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 8px rgba(102,126,234,0.4);
+}
+
+#depth {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#depth:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-align: center;
+            padding: 25px;
+        }
+
+        .metrics-row {
+            display: flex;
+            gap: 20px;
+            padding: 25px;
+            background: #f4f6fb;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+
+        .metric-card {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .metric-card:hover { transform: translateY(-6px); }
+
+        .metric-title { font-size: 0.9em; color: #667eea; font-weight: bold; }
+        .metric-value { font-size: 2em; font-weight: bold; margin-top: 10px; }
+
+        /* Prediction Form */
+        .predict-box {
+            padding: 25px;
+        }
+
+        .predict-box h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        input, select {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            outline: none;
+        }
+
+        button {
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #5a67d8;
+        }
+
+        /* Table */
+        .report { padding: 20px; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+        }
+
+        td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover { background: #f4f6fb; }
+
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <h1>⚽ Decision Tree Dashboard</h1>
+        <p>Football Match Prediction</p>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics-row">
+        <div class="metric-card">
+            <div class="metric-title">Accuracy</div>
+            <div class="metric-value">{{ accuracy|floatformat:3 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Precision</div>
+            <div class="metric-value">{{Precision|floatformat:3 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Recall</div>
+            <div class="metric-value">{{ recall|floatformat:3 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">F1 Score</div>
+            <div class="metric-value">{{ f1|floatformat:3 }}</div>
+        </div>
+    </div>
+
+    <!-- Prediction Form (FIXED TABLE) -->
+    <div class="predict-box">
+        <h2>🎯 Predict New Match</h2>
+        <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="action" id="max_depth" value="max_depth">
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+            <input type="number" name="field1" id="Start" placeholder="Enter value 1">
+            <input type="number" name="field2" id="End" placeholder="Enter value 2">
+            <button type="button" id="max-depth">MAX_Depth</button>
+       </form>
+       <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+            <div class="form-grid">
+                <input type="hidden" name="action" id="hidden_value" value="predict">
+
+                <select name="Weather" id="Weather">
+                    <option value="">Weather</option>
+                    {%for w in weather%}
+                    <option value="{{w}}">{{w}}</option>
+                    {%endfor%}
+                </select>
+
+                <select name="Temperature" id="temperature">
+                    <option value="">Temperature</option>
+                    {%for t in temperature%}
+                    <option value="{{t}}">{{t}}</option>
+                    {%endfor%}
+                  
+                </select>
+
+                <select name="Humidity" id ="humidity">
+                    <option value="">Humidity</option>
+                      {%for h in humidity%}
+                    <option value="{{h}}">{{h}}</option>
+                    {%endfor%}
+                  
+                    
+                </select>
+
+                <select name="Wind" id='wind'>
+                    <option value="">Wind</option>
+                      {%for w in wind%}
+                    <option value="{{w}}">{{w}}</option>
+                    {%endfor%}
+                  
+                    
+                </select>
+
+                <select name="Weekend" id='Weakend'>
+                    <option value="">Weekend</option>
+                      {%for w in weekend%}
+                    <option value="{{w}}">{{w}}</option>
+                    {%endfor%}
+                  
+                    
+                </select>
+
+                <select name="Ground_Condition" id="Ground_Condition">
+                    <option value="">Ground</option>
+                    {%for g in ground%}
+                    <option value="{{g}}">{{g}}</option>
+                    {%endfor%}
+                    
+                </select>
+
+            </div>
+
+            <br>
+            <div style="text-align:center;">
+                <button type="submit"  id="predict">Predict Match</button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Classification Report -->
+    <div class="report">
+        <h2>Classification Report</h2>
+
+        <table>
+            <tr>
+                <th>Class</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1-score</th>
+                <th>Support</th>
+            </tr>
+
+            {% for key, value in report.items %}
+                {% if value.precision %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td>{{ value.precision|floatformat:2 }}</td>
+                    <td>{{ value.recall|floatformat:2 }}</td>
+                    <td>{{ value.f1_score|floatformat:2 }}</td>
+                    <td>{{ value.support }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+
+    </div>
+
+</div>
+<script>
+    $(document).ready(function(){
+       // let csrftoken = $('meta[name="csrf-token"]').attr('content');
+       let csrftoken = $("input[name=csrfmiddlewaretoken]").val();
+        $("#predict").click(function(e){
+            e.preventDefault(); 
+            hidden_value
+            let Decision={
+                hidden_value:$('#hidden_value').val(),
+                weather:$("#Weather").val(),
+                temperature:$("#temperature").val(),
+                wind:$("#wind").val(),
+                humidity:$("#humidity").val(),
+                Weakend:$("#Weakend").val(),
+                Ground_Condition:$("#Ground_Condition").val(),
+            }
+            $.ajax({
+                url:'{% url "Decisiontree"%}',
+                type:"POST",
+                data:Decision,
+                headers:{
+                    "X-CSRFToken":csrftoken,
+                },
+                success:function(data){
+                    alert("Your prediction"+" " +data.predict)
+                },
+                error:function(){
+                    alert("Data is not send")
+                }
+            })
+            
+            console.log(Decision)
+        })
+        $("#max-depth").click(function(e){
+            e.preventDefault()
+            let depth={
+                hidden_value:$("#max_depth").val(),
+                Start:$("#Start").val(),
+                End:$("#End").val(),
+            }
+            console.log(depth)
+            $.ajax({
+                url:'{% url "Decisiontree"%}',
+                type:"POST",
+                data:depth,
+                headers:{
+                    "X-CSRFToken":csrftoken,
+                },
+                success:function(data){
+                    alert("your Depth Value"+ "  " +data.depth)
+                },error:function(){
+                    alert("your Data is not send")
+                }
+            })
+        }) 
+
+    })
+</script>
+
+</body>
+</html>
