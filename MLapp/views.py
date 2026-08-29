@@ -5,9 +5,10 @@ import io
 
 from django.http import JsonResponse
 import numpy as np
+from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
 import pandas as pd
-from sklearn.metrics import accuracy_score, classification_report, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, classification_report, mean_absolute_error, precision_score, recall_score, f1_score
 import matplotlib.pyplot as plt
 from django.shortcuts import HttpResponse, render
 from sklearn.compose import ColumnTransformer
@@ -453,7 +454,28 @@ def poly_predict(request):
         return JsonResponse({"success":True,"predict":context})
     #return render(request,"poly.html",{'graph':graph,"graph":graph2})
     
+def GradientBoosting(request):
+    house=HousePrice.objects.all().order_by('id').values()
+    df=pd.DataFrame(list(house))
+    x=df[['Size_sqft','Bedrooms','Bathrooms','Distance_to_city_km']]
+    y=df['House_Price']
+    x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.2,random_state=42)
+    Col = ColumnTransformer([('scaler', StandardScaler(), ['Size_sqft', 'Bedrooms', 'Bathrooms', 'Distance_to_city_km'])])
+    pipe = Pipeline(steps=[('scaler', StandardScaler()),
+                           ('boosting', GradientBoostingRegressor(n_estimators=20, learning_rate=0.1, max_depth=3, random_state=42))])
+    pipe.fit(x_train, y_train)
+    y_pred = pipe.predict(x_test)
+    error = y_test - y_pred
+    mse = np.mean(error ** 2)
+    rmse = np.sqrt(mse)
+    r2 = r2_score(y_test, y_pred)
+    cross=cross_val_score(pipe,x,y,cv=5,scoring="r2").mean()
+    mae = mean_absolute_error(y_test, y_pred)
+    print(r2,"R2 score")
+    print(rmse,"rmse")
+    print(mse,"MSE")
 
+    return render(request,"gradientboosting.html",{'house':df,'mse':mse,'rmse':rmse,'r2':r2,'cross':cross,'mae':mae})
 
 
 

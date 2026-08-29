@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path
 from numpy import poly
 
-from MLapp.views import Decisiontree, Decisiontree_load_data, Edit_Data, House_price, delete_employee, mainhtml, poly_nomial, poly_predict, predictvalue, update_Data
+from MLapp.views import Decisiontree, Decisiontree_load_data, Edit_Data, GradientBoosting, House_price, delete_employee, mainhtml, poly_nomial, poly_predict, predictvalue, update_Data
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -35,7 +35,7 @@ urlpatterns = [
     #Decisiontree
     path('Decisiontree_load_data/',Decisiontree_load_data,name="Decisiontree_load_data"),
     path('Decisiontree/',Decisiontree,name="Decisiontree"),
-#    path('Depth/',Depth,name="Depth"),
+    path('GradientBoosting/',GradientBoosting,name="GradientBoosting"),
 
 
 
