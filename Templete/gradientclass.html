@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Match Decision Tree Results</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        /* ================================
+           GLOBAL RESET
+        ================================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 30px 20px;
+            background:
+                radial-gradient(circle at top left, rgba(255,255,255,0.12), transparent 30%),
+                radial-gradient(circle at bottom right, rgba(255,255,255,0.08), transparent 30%),
+                linear-gradient(135deg, #0f172a, #1e293b 45%, #312e81);
+            color: #1e293b;
+        }
+
+        /* ================================
+           MAIN CONTAINER
+        ================================= */
+        .container {
+            width: 100%;
+            max-width: 1250px;
+            margin: auto;
+            background: #ffffff;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow:
+                0 25px 60px rgba(0, 0, 0, 0.25),
+                0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        /* ================================
+           HEADER
+        ================================= */
+        .header {
+            position: relative;
+            padding: 38px 25px;
+            text-align: center;
+            color: white;
+            background:
+                linear-gradient(135deg, #4f46e5, #6366f1 45%, #7c3aed);
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: "";
+            position: absolute;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.08);
+            top: -100px;
+            left: -70px;
+        }
+
+        .header::after {
+            content: "";
+            position: absolute;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.06);
+            bottom: -170px;
+            right: -80px;
+        }
+
+        .header h1 {
+            position: relative;
+            z-index: 2;
+            font-size: 2.2rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            position: relative;
+            z-index: 2;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        /* ================================
+           METRICS
+        ================================= */
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            padding: 30px;
+            background: #f8fafc;
+        }
+
+        .metric-card {
+            position: relative;
+            background: #ffffff;
+            padding: 24px 18px;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 5px 18px rgba(15, 23, 42, 0.07);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-7px);
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.13);
+            border-color: #c7d2fe;
+        }
+
+        .metric-title {
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .metric-value {
+            margin-top: 10px;
+            color: #1e293b;
+            font-size: 2.2rem;
+            font-weight: 800;
+        }
+
+        /* ================================
+           PREDICTION SECTION
+        ================================= */
+        .predict-box {
+            padding: 35px 30px;
+            background: #ffffff;
+        }
+
+        .predict-box h2 {
+            text-align: center;
+            margin-bottom: 28px;
+            color: #1e293b;
+            font-size: 1.5rem;
+            font-weight: 750;
+        }
+
+        /* ================================
+           DEPTH FORM
+        ================================= */
+        form:first-of-type {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 30px;
+            padding: 20px;
+            flex-wrap: wrap;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+        }
+
+        #start,
+        #End,
+        #Start {
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            width: 180px;
+            background: #ffffff;
+            color: #334155;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #start:focus,
+        #End:focus,
+        #Start:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+        }
+
+        #depth,
+        #max-depth {
+            padding: 12px 22px;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #depth:hover,
+        #max-depth:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(79, 70, 229, 0.3);
+        }
+
+        /* ================================
+           PREDICTION FORM
+        ================================= */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding: 5px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 13px 14px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            outline: none;
+            background: #ffffff;
+            color: #334155;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        input::placeholder {
+            color: #94a3b8;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12);
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        /* ================================
+           BUTTONS
+        ================================= */
+        button {
+            padding: 13px 24px;
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, #4338ca, #4f46e5);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.28);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #predict {
+            min-width: 190px;
+            margin-top: 5px;
+        }
+
+        /* ================================
+           CLASSIFICATION REPORT
+        ================================= */
+        .report {
+            padding: 30px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .report h2 {
+            margin-bottom: 18px;
+            color: #1e293b;
+            font-size: 1.4rem;
+            font-weight: 750;
+        }
+
+        /* ================================
+           TABLE
+        ================================= */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 5px 18px rgba(15, 23, 42, 0.06);
+        }
+
+        th {
+            padding: 15px 12px;
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: white;
+            font-size: 0.88rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px 12px;
+            text-align: center;
+            color: #475569;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 0.93rem;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr:hover,
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        /* ================================
+           RESPONSIVE DESIGN
+        ================================= */
+        @media (max-width: 900px) {
+            .metrics-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .form-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            .container {
+                border-radius: 16px;
+            }
+
+            .header {
+                padding: 28px 18px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .metrics-row {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+
+            .predict-box {
+                padding: 25px 18px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            form:first-of-type {
+                padding: 16px;
+            }
+
+            #start,
+            #End,
+            #Start {
+                width: 100%;
+            }
+
+            #max-depth {
+                width: 100%;
+            }
+
+            .report {
+                padding: 20px 15px;
+                overflow-x: auto;
+            }
+
+            table {
+                min-width: 600px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <h1>⚽ Decision Tree Dashboard</h1>
+        <p>Football Match Prediction</p>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics-row">
+        <div class="metric-card">
+            <div class="metric-title">Accuracy</div>
+            <div class="metric-value">{{ accuracy|floatformat:3 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Precision</div>
+            <div class="metric-value">{{Precision|floatformat:3 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Recall</div>
+            <div class="metric-value">{{ recall|floatformat:3 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">F1 Score</div>
+            <div class="metric-value">{{ f1|floatformat:3 }}</div>
+        </div>
+    </div>
+
+    <!-- Prediction Form (FIXED TABLE) -->
+    <div class="predict-box">
+        <h2>🎯 Predict New Match</h2>
+
+       <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+            <div class="form-grid">
+                <input type="hidden" name="action" id="hidden_value" value="predict">
+
+                <select name="Weather" id="Weather">
+                    <option value="">Weather</option>
+                    {%for w in weather%}
+                    <option value="{{w}}">{{w}}</option>
+                    {%endfor%}
+                </select>
+
+                <select name="Temperature" id="temperature">
+                    <option value="">Temperature</option>
+                    {%for t in temperature%}
+                    <option value="{{t}}">{{t}}</option>
+                    {%endfor%}
+                  
+                </select>
+
+                <select name="Humidity" id ="humidity">
+                    <option value="">Humidity</option>
+                      {%for h in humidity%}
+                    <option value="{{h}}">{{h}}</option>
+                    {%endfor%}
+                  
+                    
+                </select>
+
+                <select name="Wind" id='wind'>
+                    <option value="">Wind</option>
+                      {%for w in wind%}
+                    <option value="{{w}}">{{w}}</option>
+                    {%endfor%}
+                  
+                    
+                </select>
+
+                <select name="Weekend" id='Weakend'>
+                    <option value="">Weekend</option>
+                      {%for w in weekend%}
+                    <option value="{{w}}">{{w}}</option>
+                    {%endfor%}
+                  
+                    
+                </select>
+
+                <select name="Ground_Condition" id="Ground_Condition">
+                    <option value="">Ground</option>
+                    {%for g in ground%}
+                    <option value="{{g}}">{{g}}</option>
+                    {%endfor%}
+                    
+                </select>
+
+            </div>
+
+            <br>
+            <div style="text-align:center;">
+                <button type="submit"  id="predict">Predict Match</button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Classification Report -->
+    <div class="report">
+        <h2>Classification Report</h2>
+
+        <table>
+            <tr>
+                <th>Class</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1-score</th>
+                <th>Support</th>
+            </tr>
+
+            {% for key, value in report.items %}
+                {% if value.precision %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td>{{ value.precision|floatformat:2 }}</td>
+                    <td>{{ value.recall|floatformat:2 }}</td>
+                    <td>{{ value.f1_score|floatformat:2 }}</td>
+                    <td>{{ value.support }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+
+    </div>
+
+</div>
+<script>
+    $(document).ready(function(){
+       // let csrftoken = $('meta[name="csrf-token"]').attr('content');
+       let csrftoken = $("input[name=csrfmiddlewaretoken]").val();
+        $("#predict").click(function(e){
+            e.preventDefault(); 
+            hidden_value
+            let Decision={
+                hidden_value:$('#hidden_value').val(),
+                weather:$("#Weather").val(),
+                temperature:$("#temperature").val(),
+                wind:$("#wind").val(),
+                humidity:$("#humidity").val(),
+                Weakend:$("#Weakend").val(),
+                Ground_Condition:$("#Ground_Condition").val(),
+            }
+            $.ajax({
+                url:'{% url "Decisiontree"%}',
+                type:"POST",
+                data:Decision,
+                headers:{
+                    "X-CSRFToken":csrftoken,
+                },
+                success:function(data){
+                    alert("Your prediction"+" " +data.predict)
+                },
+                error:function(){
+                    alert("Data is not send")
+                }
+            })
+            
+            console.log(Decision)
+        })
+        $("#max-depth").click(function(e){
+            e.preventDefault()
+            let depth={
+                hidden_value:$("#max_depth").val(),
+                Start:$("#Start").val(),
+                End:$("#End").val(),
+            }
+            console.log(depth)
+            $.ajax({
+                url:'{% url "Decisiontree"%}',
+                type:"POST",
+                data:depth,
+                headers:{
+                    "X-CSRFToken":csrftoken,
+                },
+                success:function(data){
+                    alert("your Depth Value"+ "  " +data.depth)
+                },error:function(){
+                    alert("your Data is not send")
+                }
+            })
+        }) 
+
+    })
+</script>
+
+</body>
+</html>

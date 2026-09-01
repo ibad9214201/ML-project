@@ -30,3 +30,16 @@ class FootballMatch(models.Model):
     def __str__(self):
         play_status = "Play" if self.Play_Football else "No Play"
         return f"{self.Weather.capitalize()} - {play_status}"
+class Footballclassification(models.Model):
+# Fields
+    Weather = models.CharField(max_length=20,)
+    Temperature = models.CharField(max_length=10, help_text="Temperature: Hot, Mild, Cool")
+    Humidity = models.CharField(max_length=10,)
+    Wind = models.CharField(max_length=10,)
+    Weekend = models.CharField(max_length=20)
+    Ground_Condition = models.CharField(max_length=20,)
+    Play_Football = models.CharField(max_length=20,help_text="True if football is played (Yes), False if not (No)")
+    Time_of_Day = models.CharField(max_length=20, help_text="Time of Day: Morning, Afternoon, Evening")
+    def __str__(self):
+        play_status = "Play" if self.Play_Football else "No Play"
+        return f"{self.Weather.capitalize()} - {play_status}"

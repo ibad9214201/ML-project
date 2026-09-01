@@ -5,7 +5,7 @@ import io
 
 from django.http import JsonResponse
 import numpy as np
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
 import pandas as pd
 from sklearn.metrics import accuracy_score, classification_report, mean_absolute_error, precision_score, recall_score, f1_score
@@ -290,7 +290,7 @@ def delete_employee(request):
             "message":f"record {del_id} deleted succesufuly "
         })
     return HttpResponse("del")
-from .models import FootballMatch, HousePrice
+from .models import FootballMatch, Footballclassification, HousePrice
 
 def Edit_Data(request):
     if request.method == "POST":
@@ -461,7 +461,8 @@ def GradientBoosting(request):
     y=df['House_Price']
     x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.2,random_state=42)
     Col = ColumnTransformer([('scaler', StandardScaler(), ['Size_sqft', 'Bedrooms', 'Bathrooms', 'Distance_to_city_km'])])
-    pipe = Pipeline(steps=[('scaler', StandardScaler()),
+    pipe = Pipeline(steps=[('col',Col),
+        ('scaler', StandardScaler()),
                            ('boosting', GradientBoostingRegressor(n_estimators=20, learning_rate=0.1, max_depth=3, random_state=42))])
     pipe.fit(x_train, y_train)
     y_pred = pipe.predict(x_test)
@@ -471,13 +472,59 @@ def GradientBoosting(request):
     r2 = r2_score(y_test, y_pred)
     cross=cross_val_score(pipe,x,y,cv=5,scoring="r2").mean()
     mae = mean_absolute_error(y_test, y_pred)
-    print(r2,"R2 score")
-    print(rmse,"rmse")
-    print(mse,"MSE")
-
+    if request.method=="POST":
+        predict_value={
+            'Size_sqft':float(request.POST.get('size')),
+            'Bedrooms':int(request.POST.get('bedrooms')),
+            'Bathrooms':int(request.POST.get('bathrooms')),
+        #    'age':int(request.POST.get('age')),
+            'Distance_to_city_km':float(request.POST.get('distance'))
+        }
+        print("showe", predict_value)
+        dp=pd.DataFrame([predict_value])
+        y_pred=pipe.predict(dp)
+        print("y_pred",y_pred)
+        return JsonResponse({"success":True,"predicted":float(y_pred[0])})
     return render(request,"gradientboosting.html",{'house':df,'mse':mse,'rmse':rmse,'r2':r2,'cross':cross,'mae':mae})
 
+def Gradientclass_load(request):
+    data= pd.read_excel(r"C:\Users\Speed Computers\Downloads\football_dataset.xlsx")
+    print(data.head(3))
+    for index , i in data.iterrows():
+        Footballclassification.objects.create(
+            Weather=i['Weather'],
+            Temperature=i['Temperature'],
+            Humidity=i['Humidity'],
+            Wind=i['Wind'],
+            Weekend=i['Weekend'],
+            Ground_Condition=i['Ground_Condition'],
+            Time_of_Day=i['Time_of_Day'],
+            Play_Football=i['Play_Football']
+        )
+    return render(request, "gradientclass.html")
 
+def Gradientclass(request):
+    data = Footballclassification.objects.all().order_by('id').values()
+    df = pd.DataFrame(list(data))
+    x = df[['Weather', 'Temperature', 'Humidity', 'Wind', 'Weekend', 'Ground_Condition', 'Time_of_Day']]
+    y = df['Play_Football'].map({'Yes': 1, "No": 0})
 
-
+    categorical = ['Weather', 'Temperature', 'Humidity', 'Wind', 'Weekend', 'Ground_Condition', 'Time_of_Day']
+    process = ColumnTransformer(transformers=[
+        ("encoded", OneHotEncoder(handle_unknown='ignore'), categorical)])
+    pipe = Pipeline(steps=[
+        ('process', process), ('GradientBoosting', GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42))
+    ])
+    x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=42, test_size=0.2)
+    pipe.fit(x_train, y_train)
+    predict = pipe.predict(x_test)
+    print(predict)
+    accuracy = accuracy_score(y_test, predict.round())
+    precision = precision_score(y_test, predict.round())
+    recall = recall_score(y_test, predict.round())
+    f1 = f1_score(y_test, predict.round())
+    report = classification_report(y_test, predict.round(), output_dict=True)
+    print(precision, recall, f1, report)
+    print(report['1']['precision'], report['1']['recall'], report['1']['f1-score'])
+    return render(request, "gradientclass.html", )
 
