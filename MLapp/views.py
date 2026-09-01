@@ -526,5 +526,42 @@ def Gradientclass(request):
     report = classification_report(y_test, predict.round(), output_dict=True)
     print(precision, recall, f1, report)
     print(report['1']['precision'], report['1']['recall'], report['1']['f1-score'])
-    return render(request, "gradientclass.html", )
+    weather=Footballclassification.objects.values_list("Weather",flat=True).distinct()
+    temperature = Footballclassification.objects.values_list("Temperature", flat=True).distinct()
+    humidity = Footballclassification.objects.values_list("Humidity", flat=True).distinct()
+    wind =Footballclassification.objects.values_list("Wind", flat=True).distinct()
+    weekend = Footballclassification.objects.values_list("Weekend", flat=True).distinct()
+    ground =Footballclassification.objects.values_list("Ground_Condition", flat=True).distinct()
+    Time_of_day=Footballclassification.objects.values_list("Time_of_Day", flat=True).distinct()
+    context = {
+    "weather": weather,
+    "temperature": temperature,
+    "humidity": humidity,
+    "wind": wind,
+    "weekend": weekend,
+    "ground": ground,
+    "accuracy":accuracy,
+    "Precision":precision,
+    'recall':recall,
+    "f1":f1,
+    'Time_of_Day':Time_of_day,
+    "report":report,'accuracy':accuracy, 'precision':precision, 'recall':recall, 'f1':f1, 'report':report}
+    if request.method=="POST":
+        Decision={
+                "Weather":request.POST.get("weather"),
+                "Temperature":request.POST.get("temperature"),
+                "Humidity":request.POST.get("humidity"),
+                "Wind":request.POST.get("wind"),
+                "Weekend":request.POST.get("Weakend"),
+                "Ground_Condition":request.POST.get("Ground_Condition"),
+                "Time_of_Day":request.POST.get("Time_of_Day")
+            }
+        dp=pd.DataFrame([Decision])
+        prediction=pipe.predict(dp)
+        print(prediction,"THESSSSSSSSSSSSSSS")
+        if prediction[0]==1:
+            return JsonResponse({'Success':True,"predict":"Yes"})
+        else:
+            return JsonResponse({'Success':True,"predict":"NO"})
+    return render(request, "gradientclass.html",context )
 

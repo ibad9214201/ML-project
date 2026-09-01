@@ -497,6 +497,13 @@
                     
                 </select>
 
+                <select name="Time_of_Day" id="Time_of_Day">
+                    <option value="">Time of Day</option>
+                    {%for T in Time_of_Day%}
+                    <option value="{{T}}">{{T}}</option>
+                    {%endfor%}
+                    
+                </select>
                 <select name="Ground_Condition" id="Ground_Condition">
                     <option value="">Ground</option>
                     {%for g in ground%}
@@ -546,22 +553,22 @@
 </div>
 <script>
     $(document).ready(function(){
-       // let csrftoken = $('meta[name="csrf-token"]').attr('content');
        let csrftoken = $("input[name=csrfmiddlewaretoken]").val();
         $("#predict").click(function(e){
             e.preventDefault(); 
             hidden_value
             let Decision={
-                hidden_value:$('#hidden_value').val(),
+              //  hidden_value:$('#hidden_value').val(),
                 weather:$("#Weather").val(),
                 temperature:$("#temperature").val(),
                 wind:$("#wind").val(),
                 humidity:$("#humidity").val(),
                 Weakend:$("#Weakend").val(),
                 Ground_Condition:$("#Ground_Condition").val(),
+                Time_of_Day:$("#Time_of_Day").val(),
             }
             $.ajax({
-                url:'{% url "Decisiontree"%}',
+                url:'{% url "Gradientclass"%}',
                 type:"POST",
                 data:Decision,
                 headers:{
