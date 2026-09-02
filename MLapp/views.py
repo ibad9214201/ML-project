@@ -22,7 +22,7 @@ from sklearn.preprocessing import OneHotEncoder, PolynomialFeatures
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.tree import DecisionTreeClassifier
 from MLapp.models import HousePrice
-
+from xgboost import XGBRegressor
 def House(request):
     data = pd.read_excel(r"C:\Users\Speed Computers\Downloads\pricehouse.xlsx")
     for i, row in data.iterrows():
@@ -565,3 +565,46 @@ def Gradientclass(request):
             return JsonResponse({'Success':True,"predict":"NO"})
     return render(request, "gradientclass.html",context )
 
+def XgboostRegressor(request):
+    if request.method=="POST":
+        house=HousePrice.objects.all().values()
+        df=pd.DataFrame(list(house))
+        x=df[["Size_sqft","Bedrooms","Bathrooms","Distance_to_city_km"]]
+        y=df["House_Price"]
+        transf=ColumnTransformer(
+        transformers=[
+            ("scaler",StandardScaler(),["Size_sqft","Bedrooms","Bathrooms","Distance_to_city_km"])
+        ])
+        pip=Pipeline(steps=[
+         ('transf',transf),
+        ('xgboost', XGBRegressor())])
+        x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=0.2, random_state=42)
+        pip.fit(x_train,y_train)
+        y_pred=pip.predict(x_test)
+        error=y_test-y_pred
+        mse=np.mean(error**2)
+        rmse=np.sqrt(mse)
+        r2 = r2_score(y_test, y_pred)
+      #  slope=pip.named_steps['linear'].coef_
+        intercept=pip.named_steps['linear'].intercept_
+        feature_name=pip.named_steps['transf'].get_feature_names_out() 
+        predict_value={
+            'Size_sqft':request.POST.get('Size_sqft'),
+            'Bedrooms':request.POST.get('Bedrooms'),
+            'Bathrooms':request.POST.get('Bathrooms'),
+            'Distance_to_city_km':request.POST.get('Distance_to_city_km'),
+        }
+        dp=pd.DataFrame([predict_value])
+        predication=pip.predict(dp)
+        print(predication)
+        predicted = {
+            "y_pred": predication.tolist(),
+            "error": error.tolist(),
+            "mse": mse,
+            "rmse": rmse,
+            "r2": r2,
+            "intercept":intercept,
+        }
+        print(predicted,'this your predicate score ')
+        return JsonResponse({"sucess":True,"predicted":predicted})
+    return render(request,"XGBOOST.html")
