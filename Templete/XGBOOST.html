@@ -375,21 +375,6 @@
     <!-- Search input with improved styling -->
     <input type="text" id="searchInput" class="form-control search-bar mb-4" placeholder="🔍 Search any house data by address or features...">
 
-    <!-- Edit row (hidden by default) -->
-    <table style="display: none;" id="model" class="model mb-3">
-        <tr class="table-active">
-            <td><input type="show" id="id" class="form-control" placeholder="id"></td>
-            <td><input type="number" id="Size_sqft_up" class="form-control" placeholder="sqft"></td>
-            <td><input type="number" id="Bedrooms_up" class="form-control" placeholder="bed"></td>
-            <td><input type="text" id="Bathrooms_up" class="form-control" placeholder="baths"></td>
-            <td><input type="number" id="Age_years_up" step="1" class="form-control" placeholder="age"></td>
-            <td><input type="number" id="Distance_to_city_km_up" step="1" class="form-control" placeholder="dist."></td>
-            <td><input type="text" id="Location_type_up" class="form-control" placeholder="urban/suburb"></td>
-            <td><input type="text" id="Condition_up" class="form-control" placeholder="excellent/good"></td>
-            <td><input type="text" id="House_Price_up" class="form-control" placeholder="price"></td>
-            <td><button class="btn btn-soft-teal btn-sm" id="Update_data">UPDATE</button></td>
-        </tr>
-    </table>
 
     <!-- Main table -->
     <table class="table table-bordered table-striped align-middle" id="employeeTable">
@@ -398,11 +383,7 @@
                 <th>Size_sqft</th>
                 <th>Bedrooms</th>
                 <th>Bathrooms</th>
-                <th>Age_years</th>
                 <th>Distance_to_city_km</th>
-                <th>Location_type</th>
-                <th>Condition</th>
-                <th>House_Price</th>
                 <th>Action1</th>
             </tr>
         </thead>
@@ -412,12 +393,46 @@
                 <td><input type="number" id="Size_sqft" class="form-control" placeholder="sqft"></td>
                 <td><input type="number" id="Bedrooms" class="form-control" placeholder="bed"></td>
                 <td><input type="text" id="Bathrooms" class="form-control" placeholder="baths"></td>
-                <td><input type="number" id="Age_years" step="1" class="form-control" placeholder="age"></td>
                 <td><input type="number" id="Distance_to_city_km" step="1" class="form-control" placeholder="dist."></td>
-                <td><input type="text" id="Location_type" class="form-control" placeholder="urban/suburb"></td>
-                <td><input type="text" id="Condition" class="form-control" placeholder="excellent/good"></td>
-                <td><input type="text" id="House_Price" class="form-control" placeholder="price"></td>
                 <td><button class="btn btn-soft-teal btn-sm" id="Predict">📐 Pred</button></td>
             </tr>
+<script>
+    $(document).ready(function(){
+        $("#Predict").click(function(){
+            let data={
+                Size_sqft: $("#Size_sqft").val(),
+                Bedrooms: $("#Bedrooms").val(),
+                Bathrooms: $("#Bathrooms").val(),
+                distance_to_city_km: $("#Distance_to_city_km").val(),
+            }
+            console.log(data)
+            $.ajax({
+                url: "{% url 'XgboostRegressor' %}",
+                type: "POST",
+                data: data,
+                headers: {
+                    'X-CSRFToken': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response){
+                    if(response.sucess){
+                        $("#predication").text(response.predicted);
+                        $("#error").text((response.error || '—'));
+                        $("#mse").text((response.mse || '—'));
+                        $("#rmse").text((response.rmse || '—'));
+                        $("#r2").text((response.r2 || '—'));
+                        $("#intercept").text((response.predicted.intercept || '—'));
+                        $("#modelResultsContainer").fadeIn();
+                    } else {
+                        alert("Prediction failed. Please check your input.");
+                    }
+                },
+                error: function(xhr, status, error){
+                    console.error("Error occurred:", error);
+                    alert("An error occurred while processing your request.");
+                }
+            });
+        });
+    })
+</script>
 </body>
 </html>

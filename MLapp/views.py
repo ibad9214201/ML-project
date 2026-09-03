@@ -586,7 +586,7 @@ def XgboostRegressor(request):
         rmse=np.sqrt(mse)
         r2 = r2_score(y_test, y_pred)
       #  slope=pip.named_steps['linear'].coef_
-        intercept=pip.named_steps['linear'].intercept_
+       # intercept=pip.named_steps['xgboost'].intercept_
         feature_name=pip.named_steps['transf'].get_feature_names_out() 
         predict_value={
             'Size_sqft':request.POST.get('Size_sqft'),
@@ -594,16 +594,16 @@ def XgboostRegressor(request):
             'Bathrooms':request.POST.get('Bathrooms'),
             'Distance_to_city_km':request.POST.get('Distance_to_city_km'),
         }
+        print(predict_value)
         dp=pd.DataFrame([predict_value])
         predication=pip.predict(dp)
-        print(predication)
+       
         predicted = {
             "y_pred": predication.tolist(),
             "error": error.tolist(),
             "mse": mse,
             "rmse": rmse,
             "r2": r2,
-            "intercept":intercept,
         }
         print(predicted,'this your predicate score ')
         return JsonResponse({"sucess":True,"predicted":predicted})
