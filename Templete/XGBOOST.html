@@ -415,11 +415,12 @@
                 },
                 success: function(response){
                     if(response.success){
-                        $("#predication").text(response.predicted.y_pred);
-                        $("#error").text(response.predicted.error);
-                        $("#mse").text(response.predicted.mse);
-                        $("#rmse").text(response.predicted.rmse);
-                        $("#r2").text(response.predicted.r2);
+                        
+                        $("#predication").text(Number(response.predicted.y_pred).toFixed(2));
+                        $("#error").text(Number(response.predicted.error).toFixed(2));
+                        $("#mse").text(Number(response.predicted.mse).toFixed(2));
+                        $("#rmse").text(Number(response.predicted.rmse).toFixed(2));
+                        $("#r2").text(Number(response.predicted.r2).toFixed(2));
                         $("#modelResultsContainer").fadeIn();
                     } else {
                         alert("Prediction failed. Please check your input.");

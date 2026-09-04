@@ -2,7 +2,7 @@
 import base64
 from io import BytesIO
 import io
-
+from xgboost import XGBClassifier
 from django.http import JsonResponse
 import numpy as np
 from sklearn.ensemble import GradientBoostingClassifier, GradientBoostingRegressor
@@ -22,7 +22,7 @@ from sklearn.preprocessing import OneHotEncoder, PolynomialFeatures
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.tree import DecisionTreeClassifier
 from MLapp.models import HousePrice
-from xgboost import XGBRegressor
+from xgboost import XGBClassifier, XGBRegressor
 def House(request):
     data = pd.read_excel(r"C:\Users\Speed Computers\Downloads\pricehouse.xlsx")
     for i, row in data.iterrows():
@@ -605,6 +605,76 @@ def XgboostRegressor(request):
             "rmse": rmse,
             "r2": r2,
         }
-        print(predicted,'this your predicate score ')
         return JsonResponse({"success":True,"predicted":predicted})
     return render(request,"XGBOOST.html")
+
+def XgboostClassification(request):
+    data=FootballMatch.objects.all().order_by('id').values()
+    df=pd.DataFrame(list(data))
+    x=df[['Weather','Temperature','Humidity','Wind','Weekend','Ground_Condition']]
+       # df['Play_Football'] = df['Play_Football'].str.strip().str.capitalize()
+    y=df['Play_Football'].map({'Yes':1,"No":0})
+        
+    categorical =['Weather','Temperature','Humidity','Wind','Weekend','Ground_Condition']
+    process = ColumnTransformer(transformers=[
+        ("encoded", OneHotEncoder(handle_unknown='ignore'), categorical)])
+    pipe=Pipeline(steps=[
+            ('process',process),('Decision', XGBClassifier(max_depth=1, random_state=42))
+        ])
+    x_train,x_test,y_train,y_test=train_test_split(x,y,random_state=42,test_size=0.2)
+    pipe.fit(x_train,y_train)
+    predict=pipe.predict(x_test)
+    print(predict)
+    cm=confusion_matrix(y_test,predict)
+    accuracy=accuracy_score(y_test,predict)
+    precision=precision_score(y_test,predict)
+    recall=recall_score(y_test,predict)
+    f1=f1_score(y_test,predict)
+    report=classification_report(y_test,predict,output_dict=True)
+     
+
+    weather=FootballMatch.objects.values_list("Weather",flat=True).distinct()
+    temperature = FootballMatch.objects.values_list("Temperature", flat=True).distinct()
+    humidity = FootballMatch.objects.values_list("Humidity", flat=True).distinct()
+    wind = FootballMatch.objects.values_list("Wind", flat=True).distinct()
+    weekend = FootballMatch.objects.values_list("Weekend", flat=True).distinct()
+    ground = FootballMatch.objects.values_list("Ground_Condition", flat=True).distinct()
+    context = {
+        'predictions': list(predict),
+        'accuracy': accuracy,
+        'precision': precision,
+        'recall': recall,
+        'f1': f1,
+        'report': report,
+        # 'cm_image': image_base64,
+        'x_test': x_test.to_dict(orient='records'),
+        "weather": weather,
+        "temperature": temperature,
+        "humidity": humidity,
+        "wind": wind,
+        "weekend": weekend,
+        "ground": ground,
+        "accuracy":accuracy,
+        "Precision":precision,
+        'recall':recall,
+        "f1":f1,
+        "report":report}
+    if request.method=="POST":
+        Decision={
+            "Weather":request.POST.get("Weather"),
+            "Temperature":request.POST.get("Temperature"),
+            "Humidity":request.POST.get("Humidity"),
+            "Wind":request.POST.get("Wind"),
+            "Weekend":request.POST.get("Weekend"),
+            "Ground_Condition":request.POST.get("Ground_Condition"),
+        }
+        print(Decision['Weather'])
+            
+        dp=pd.DataFrame([Decision])
+        prediction=pipe.predict(dp)
+        print(prediction,"THESSSSSSSSSSSSSSS")
+        if prediction[0]==1:
+            return JsonResponse({'Success':True,"predict":"Yes"})
+        else:
+            return JsonResponse({'Success':True,"predict":"NO"})
+    return render(request, "XGBOOSTClassification.html",context)

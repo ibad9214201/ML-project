@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Match Decision Tree Results</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        /* ================================
+   GLOBAL
+================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px;
+    background:
+        radial-gradient(circle at top left, #1e3a5f 0%, transparent 40%),
+        radial-gradient(circle at bottom right, #0f766e 0%, transparent 40%),
+        #07111f;
+    color: #1e293b;
+}
+
+
+/* ================================
+   MAIN CONTAINER
+================================ */
+.container {
+    width: 100%;
+    max-width: 1250px;
+    margin: auto;
+    background: #f8fafc;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.35);
+}
+
+
+/* ================================
+   HEADER
+================================ */
+.header {
+    position: relative;
+    padding: 45px 25px;
+    text-align: center;
+    color: white;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(15, 23, 42, 0.95),
+            rgba(15, 118, 110, 0.9)
+        );
+}
+
+.header::after {
+    content: "⚽";
+    position: absolute;
+    right: 8%;
+    top: 20px;
+    font-size: 80px;
+    opacity: 0.08;
+}
+
+.header h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.header p {
+    font-size: 1rem;
+    opacity: 0.8;
+}
+
+
+/* ================================
+   METRICS
+================================ */
+.metrics-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    padding: 30px;
+    background: #eef2f7;
+}
+
+.metric-card {
+    position: relative;
+    padding: 25px 20px;
+    background: white;
+    border-radius: 18px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.metric-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #0f766e, #14b8a6);
+}
+
+.metric-card:hover {
+    transform: translateY(-7px);
+    box-shadow: 0 15px 35px rgba(15, 23, 42, 0.15);
+}
+
+.metric-title {
+    color: #64748b;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.metric-value {
+    margin-top: 10px;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #0f766e;
+}
+
+
+/* ================================
+   PREDICTION SECTION
+================================ */
+.predict-box {
+    padding: 35px;
+    background: white;
+}
+
+.predict-box h2 {
+    margin-bottom: 25px;
+    text-align: center;
+    color: #0f172a;
+    font-size: 1.6rem;
+}
+
+
+/* ================================
+   FORM
+================================ */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 14px 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 0.95rem;
+    outline: none;
+    transition: all 0.25s ease;
+}
+
+input:hover,
+select:hover {
+    border-color: #0f766e;
+}
+
+input:focus,
+select:focus {
+    border-color: #0f766e;
+    background: white;
+    box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.12);
+}
+
+select {
+    cursor: pointer;
+}
+
+
+/* ================================
+   PREDICT BUTTON
+================================ */
+button {
+    min-width: 220px;
+    padding: 14px 25px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #0f766e, #14b8a6);
+    color: white;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(15, 118, 110, 0.25);
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 25px rgba(15, 118, 110, 0.35);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+
+/* ================================
+   CLASSIFICATION REPORT
+================================ */
+.report {
+    padding: 35px;
+    background: #f8fafc;
+}
+
+.report h2 {
+    margin-bottom: 20px;
+    color: #0f172a;
+    font-size: 1.5rem;
+}
+
+
+/* ================================
+   TABLE
+================================ */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.08);
+}
+
+th {
+    padding: 16px 12px;
+    background: #0f172a;
+    color: white;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+td {
+    padding: 15px 12px;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+    color: #475569;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:hover,
+tr:hover td {
+    background: #f0fdfa;
+}
+
+
+/* ================================
+   RESPONSIVE DESIGN
+================================ */
+@media (max-width: 900px) {
+
+    .metrics-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .header h1 {
+        font-size: 2rem;
+    }
+}
+
+
+@media (max-width: 600px) {
+
+    body {
+        padding: 15px;
+    }
+
+    .container {
+        border-radius: 16px;
+    }
+
+    .header {
+        padding: 35px 20px;
+    }
+
+    .header h1 {
+        font-size: 1.6rem;
+    }
+
+    .metrics-row {
+        grid-template-columns: 1fr;
+        padding: 20px;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .predict-box,
+    .report {
+        padding: 20px;
+    }
+
+    table {
+        font-size: 0.8rem;
+    }
+
+    th,
+    td {
+        padding: 10px 6px;
+    }
+
+    button {
+        width: 100%;
+    }
+}
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <h1>⚽ Decision Tree Dashboard</h1>
+        <p>Football Match Prediction</p>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics-row">
+        <div class="metric-card">
+            <div class="metric-title">Accuracy</div>
+            <div class="metric-value">{{ accuracy|floatformat:3 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Precision</div>
+            <div class="metric-value">{{Precision|floatformat:3 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Recall</div>
+            <div class="metric-value">{{ recall|floatformat:3 }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">F1 Score</div>
+            <div class="metric-value">{{ f1|floatformat:3 }}</div>
+        </div>
+    </div>
+
+    <!-- Prediction Form (FIXED TABLE) -->
+    <div class="predict-box">
+        <h2>🎯 Predict New Match</h2>
+
+       <form method="POST">
+            {% csrf_token %}
+            <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
+            <div class="form-grid">
+                <input type="hidden" name="action" id="hidden_value" value="predict">
+
+                <select name="Weather" id="Weather">
+                    <option value="">Weather</option>
+                    {%for w in weather%}
+                    <option value="{{w}}">{{w}}</option>
+                    {%endfor%}
+                </select>
+
+                <select name="Temperature" id="temperature">
+                    <option value="">Temperature</option>
+                    {%for t in temperature%}
+                    <option value="{{t}}">{{t}}</option>
+                    {%endfor%}
+                  
+                </select>
+
+                <select name="Humidity" id ="humidity">
+                    <option value="">Humidity</option>
+                      {%for h in humidity%}
+                    <option value="{{h}}">{{h}}</option>
+                    {%endfor%}
+                  
+                    
+                </select>
+
+                <select name="Wind" id='wind'>
+                    <option value="">Wind</option>
+                      {%for w in wind%}
+                    <option value="{{w}}">{{w}}</option>
+                    {%endfor%}
+                  
+                    
+                </select>
+
+                <select name="Weekend" id='Weakend'>
+                    <option value="">Weekend</option>
+                      {%for w in weekend%}
+                    <option value="{{w}}">{{w}}</option>
+                    {%endfor%}
+                  
+                    
+                </select>
+
+                <select name="Ground_Condition" id="Ground_Condition">
+                    <option value="">Ground</option>
+                    {%for g in ground%}
+                    <option value="{{g}}">{{g}}</option>
+                    {%endfor%}
+                    
+                </select>
+
+            </div>
+
+            <br>
+            <div style="text-align:center;">
+                <button type="submit"  id="predict">Predict Match</button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Classification Report -->
+    <div class="report">
+        <h2>Classification Report</h2>
+
+        <table>
+            <tr>
+                <th>Class</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>F1-score</th>
+                <th>Support</th>
+            </tr>
+
+            {% for key, value in report.items %}
+                {% if value.precision %}
+                <tr>
+                    <td>{{ key }}</td>
+                    <td>{{ value.precision|floatformat:2 }}</td>
+                    <td>{{ value.recall|floatformat:2 }}</td>
+                    <td>{{ value.f1_score|floatformat:2 }}</td>
+                    <td>{{ value.support }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+        </table>
+
+    </div>
+
+</div>
+<script>
+    $(document).ready(function() {
+        $('#predict').click(function(event) {
+            event.preventDefault(); // Prevent the default form submission
+        let data={
+            'Weather': $('#Weather').val(),
+            'Temperature': $('#temperature').val(),
+            'Humidity': $('#humidity').val(),
+            'Wind': $('#wind').val(),
+            'Weekend': $('#Weakend').val(),
+            'Ground_Condition': $('#Ground_Condition').val(),
+        }
+        console.log(data);
+      
+        });
+        $.ajax({
+            url: "{% url 'XgboostClassification' %}",
+            type: "POST",
+            data: data,
+            success: function(response) {
+                // Handle the response from the server
+                console.log(response.predict);
+            },
+            error: function(xhr, status, error) {
+                // Handle any errors that occurred during the request
+                console.error(error);
+            }
+        });
+    });
+</script>
+</body>
+</html>
