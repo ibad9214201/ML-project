@@ -606,5 +606,5 @@ def XgboostRegressor(request):
             "r2": r2,
         }
         print(predicted,'this your predicate score ')
-        return JsonResponse({"sucess":True,"predicted":predicted})
+        return JsonResponse({"success":True,"predicted":predicted})
     return render(request,"XGBOOST.html")
