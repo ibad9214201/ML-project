@@ -624,7 +624,7 @@ def XgboostClassification(request):
     x_train,x_test,y_train,y_test=train_test_split(x,y,random_state=42,test_size=0.2)
     pipe.fit(x_train,y_train)
     predict=pipe.predict(x_test)
-    print(predict)
+
     cm=confusion_matrix(y_test,predict)
     accuracy=accuracy_score(y_test,predict)
     precision=precision_score(y_test,predict)
@@ -660,6 +660,7 @@ def XgboostClassification(request):
         "f1":f1,
         "report":report}
     if request.method=="POST":
+       
         Decision={
             "Weather":request.POST.get("Weather"),
             "Temperature":request.POST.get("Temperature"),
@@ -668,7 +669,7 @@ def XgboostClassification(request):
             "Weekend":request.POST.get("Weekend"),
             "Ground_Condition":request.POST.get("Ground_Condition"),
         }
-        print(Decision['Weather'])
+        print(Decision,"All Data")
             
         dp=pd.DataFrame([Decision])
         prediction=pipe.predict(dp)

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Football Match Decision Tree Results</title>
+    <title>Football Match XGBOOST Tree Results</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <style>
@@ -469,6 +469,7 @@ tr:hover td {
 </div>
 <script>
     $(document).ready(function() {
+         let csrftoken = $("input[name=csrfmiddlewaretoken]").val();
         $('#predict').click(function(event) {
             event.preventDefault(); // Prevent the default form submission
         let data={
@@ -480,21 +481,27 @@ tr:hover td {
             'Ground_Condition': $('#Ground_Condition').val(),
         }
         console.log(data);
-      
-        });
-        $.ajax({
+                $.ajax({
             url: "{% url 'XgboostClassification' %}",
             type: "POST",
             data: data,
+            headers: { 'X-CSRFToken': csrftoken },
             success: function(response) {
-                // Handle the response from the server
-                console.log(response.predict);
+                if(response.Success){
+                    alert("Prediction: " + response.predict);
+                } else {
+                    alert("Error Prediction is undefined: " + response.error);
+                }
+                
             },
             error: function(xhr, status, error) {
                 // Handle any errors that occurred during the request
                 console.error(error);
             }
         });
+      
+        });
+
     });
 </script>
 </body>
